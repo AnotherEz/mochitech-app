@@ -1,573 +1,480 @@
-import React, { useEffect, useRef, useState } from 'react';
-import * as PIXI from 'pixi.js';
-import { Howl } from 'howler';
-import { gsap } from 'gsap';
-import './App.css';
-
-// React conversion and modernization of the original HTML file.
-// - Default export is the component Mochitech
-// - Install required packages: npm install pixi.js howler gsap
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import "./App.css";
 
 export default function Mochitech() {
-  // Refs for DOM elements and PIXI/app containers
-  const petCanvasHolderRef = useRef(null);
+  // DOM refs
   const floatingContainerRef = useRef(null);
   const speechRef = useRef(null);
   const energyFillRef = useRef(null);
+  const petStageRef = useRef(null);
 
-  // PIXI refs
-  const appRef = useRef(null);
-  const faceRef = useRef(null);
+  // SVG refs
+  const petGroupRef = useRef(null);
   const eyeLRef = useRef(null);
   const eyeRRef = useRef(null);
   const mouthRef = useRef(null);
-  const cheeksRef = useRef(null);
-  const hatRef = useRef(null);
-  const glassesRef = useRef(null);
-  const scarfRef = useRef(null);
-  const backpackRef = useRef(null);
 
   // Audio refs
   const musicRef = useRef(null);
   const chompRef = useRef(null);
 
-  // Component state
+  // State
   const [state, setState] = useState({
-    name: 'Mochitechito',
+    name: "Mochitechito",
     energy: 0,
-    hat: 'none',
-    glasses: 'none',
-    scarf: 'none',
+    hat: "none", // cap | crown | beanie | none
+    glasses: "none", // round | star | none
+    scarf: "none", // scarf | backpack | none
   });
 
-  const storageKey = 'mochitech_state_v1';
+  const [calcResult, setCalcResult] = useState("—");
+  const [ageInput, setAgeInput] = useState("");
+  const [weightInput, setWeightInput] = useState("");
+  const [hbInput, setHbInput] = useState("");
 
-  // Tips
-  const tips = [
-    'Combina hierro con vitamina C para absorberlo mejor.',
-    'Evita café o té justo después de comer.',
-    'Incluye legumbres, sangrecita, hígado o espinaca en tus comidas.',
-    'Añade frutas cítricas como naranja o mandarina.',
-    'Mantén horarios regulares de comida e hidratación.',
-  ];
+  const storageKey = "mochitech_state_v1";
+
+  // Tips (rotatorios + animados)
+  const tips = useMemo(
+    () => [
+      "Hierro + vitamina C = equipo ganador (mochi + jugo de naranja).",
+      "Evita café o té justo después de comer: dificultan la absorción.",
+      "Incluye legumbres, sangrecita, hígado o espinaca con frutas cítricas.",
+      "Bebe agua durante el día: la hidratación ayuda a tu energía.",
+      "Constancia: marca tu calendario y alimenta a Mochitechito a diario.",
+    ],
+    []
+  );
   const [tipIndex, setTipIndex] = useState(0);
 
-  // Utilities
-  function clamp(v, min, max) {
-    return Math.max(min, Math.min(max, v));
-  }
+  // Utils
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
+  const starPath = (cx, cy, spikes, R, r) => {
+    let rot = Math.PI / 2 * 3;
+    const step = Math.PI / spikes;
+    const pts = [];
+    for (let i = 0; i < spikes; i++) {
+      pts.push([cx + Math.cos(rot) * R, cy + Math.sin(rot) * R]); rot += step;
+      pts.push([cx + Math.cos(rot) * r, cy + Math.sin(rot) * r]); rot += step;
+    }
+    const [x0, y0] = pts[0];
+    return "M" + [x0, y0].join(" ") + " " + pts.slice(1).map(([x, y]) => "L" + x + " " + y).join(" ") + " Z";
+  };
+
+  // Voz — niña suave/tiers
+  const voiceRef = useRef(null);
+  function pickKindaVoice() {
+    const voices = window.speechSynthesis?.getVoices?.() || [];
+    const prefer = ["child", "niñ", "mujer", "Luciana", "Paulina", "Sofia", "Google español", "es-419", "MX", "ES"];
+    const es = voices.filter(v => /^es/i.test(v.lang));
+    let best = es.find(v => prefer.some(k => (v.name + " " + v.lang).toLowerCase().includes(k.toLowerCase())));
+    if (!best && es.length) best = es[0];
+    voiceRef.current = best || null;
+  }
   function speak(text) {
-    if (!('speechSynthesis' in window)) return;
+    if (!("speechSynthesis" in window)) return;
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'es-ES';
-    u.rate = 1.02;
-    u.pitch = 1.05;
+    u.lang = voiceRef.current?.lang || "es-ES";
+    u.voice = voiceRef.current || null;
+    u.rate = 1.03;   // cadencia dulce
+    u.pitch = 1.18;  // tono más infantil
+    u.volume = 1;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(u);
   }
-
   function setSpeech(text) {
     if (!speechRef.current) return;
     speechRef.current.innerHTML = text;
     try {
-      gsap.fromTo(
-        speechRef.current,
-        { scale: 0.95, opacity: 0.6 },
-        { scale: 1, opacity: 1, duration: 0.35, ease: 'back.out(2)' }
-      );
-    } catch (e) {}
+      speechRef.current.classList.remove("pop");
+      // reflow para reiniciar anim
+      // eslint-disable-next-line no-unused-expressions
+      speechRef.current.offsetHeight;
+      speechRef.current.classList.add("pop");
+    } catch {}
   }
 
-  // Save/load state
+  // Save / Load
   function saveState() {
     try {
       localStorage.setItem(storageKey, JSON.stringify(state));
       sparkle();
-      setSpeech('¡Progreso guardado! 💾');
-    } catch (e) {
-      console.warn(e);
-    }
+      setSpeech("¡Progreso guardado! 💾");
+    } catch {}
   }
   function loadState() {
     try {
       const raw = localStorage.getItem(storageKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setState((s) => ({ ...s, ...parsed }));
-      }
-    } catch (e) {
-      console.warn(e);
-    }
+      if (raw) setState(s => ({ ...s, ...JSON.parse(raw) }));
+    } catch {}
   }
 
-  // PIXI helpers
-  function drawStarPoints(cx, cy, spikes, outerRadius, innerRadius) {
-    const pts = [];
-    let rot = (Math.PI / 2) * 3;
-    const step = Math.PI / spikes;
-    for (let i = 0; i < spikes; i++) {
-      pts.push(cx + Math.cos(rot) * outerRadius, cy + Math.sin(rot) * outerRadius);
-      rot += step;
-      pts.push(cx + Math.cos(rot) * innerRadius, cy + Math.sin(rot) * innerRadius);
-      rot += step;
+  // Fondo flotante + parallax suave
+  useEffect(() => {
+    const container = floatingContainerRef.current;
+    if (!container) return;
+
+    function createMascot() {
+      const d = document.createElement("div");
+      d.classList.add("floating");
+      d.style.left = Math.random() * 100 + "vw";
+      const size = 60 + Math.random() * 80;
+      d.style.width = size + "px";
+      d.style.height = size + "px";
+      d.style.animationDuration = 12 + Math.random() * 12 + "s";
+      d.style.animationDelay = Math.random() * 3 + "s";
+      container.appendChild(d);
+      setTimeout(() => d.remove(), 24000);
     }
-    return pts;
+    const id = setInterval(createMascot, 1200);
+    for (let i = 0; i < 8; i++) createMascot();
+
+    const onMove = (e) => {
+      const x = (e.clientX / window.innerWidth - 0.5) * 8;
+      const y = (e.clientY / window.innerHeight - 0.5) * 8;
+      container.style.transform = `translate(${x}px, ${y}px)`;
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("pointermove", onMove);
+    };
+  }, []);
+
+  // Música local (coloca /public/make_it_right.mp3)
+  const MUSIC_URL = "/make_it_right.mp3";
+  useEffect(() => {
+    const m = musicRef.current;
+    const c = chompRef.current;
+    if (!m || !c) return;
+
+    const tryPlay = () => {
+      m.volume = 0.35;
+      m.loop = true;
+      m.play().catch(() => {
+        setSpeech("🔊 Si no escuchas música, toca “▶ Música”.");
+      });
+    };
+    // Intento de autoplay + desbloqueo al primer gesto
+    const id = setTimeout(tryPlay, 120);
+    const unlock = () => { m.play().catch(()=>{}); window.removeEventListener("pointerdown", unlock); };
+    window.addEventListener("pointerdown", unlock, { once: true });
+
+    return () => { clearTimeout(id); window.removeEventListener("pointerdown", unlock); };
+  }, []);
+
+  function handlePlayMusic() {
+    const m = musicRef.current;
+    if (!m) return;
+    m.play().catch(() => {});
+  }
+  function handleMuteMusic() {
+    const m = musicRef.current;
+    if (!m) return;
+    m.muted = !m.muted;
   }
 
-  function ensureAccessoryContainers() {
-    const app = appRef.current;
-    if (!app) return false;
-    if (!hatRef.current) {
-      hatRef.current = new PIXI.Container();
-      app.stage.addChild(hatRef.current);
+  // Idle wobble + parpadeo aleatorio + selección de voz
+  useEffect(() => {
+    if (!petGroupRef.current) return;
+
+    // Idle
+    petGroupRef.current.animate(
+      [
+        { transform: "translateY(0px) scale(1)" },
+        { transform: "translateY(6px) scale(1.02, .98)" },
+        { transform: "translateY(0px) scale(1)" },
+      ],
+      { duration: 1600, iterations: Infinity, easing: "ease-in-out" }
+    );
+
+    pickKindaVoice();
+    window.speechSynthesis?.addEventListener?.("voiceschanged", pickKindaVoice);
+
+    let alive = true;
+    (function loop() {
+      const delay = 1400 + Math.random() * 2200;
+      setTimeout(() => { if (!alive) return; blink(); loop(); }, delay);
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  // Sincroniza barra de energía
+  useEffect(() => {
+    if (energyFillRef.current) {
+      energyFillRef.current.style.width = state.energy + "%";
+      energyFillRef.current.classList.toggle("pulse", state.energy >= 90);
     }
-    if (!glassesRef.current) {
-      glassesRef.current = new PIXI.Container();
-      app.stage.addChild(glassesRef.current);
-    }
-    if (!scarfRef.current) {
-      scarfRef.current = new PIXI.Container();
-      app.stage.addChild(scarfRef.current);
-    }
-    if (!backpackRef.current) {
-      backpackRef.current = new PIXI.Container();
-      app.stage.addChild(backpackRef.current);
-    }
-    return true;
-  }
+    try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch {}
+  }, [state.energy, state.hat, state.glasses, state.scarf, state.name]);
 
-  function initPixi() {
-    if (typeof PIXI === 'undefined') {
-      setSpeech('Error: motor gráfico no disponible (PIXI).');
-      console.error('PIXI not found');
-      return;
-    }
-    const holder = petCanvasHolderRef.current;
-    if (!holder) return;
+  // Carga inicial
+  useEffect(() => { loadState(); }, []);
 
-    try {
-      // Destroy previous app if exists
-      if (appRef.current && typeof appRef.current.destroy === 'function') {
-        try {
-          appRef.current.destroy(true, { children: true, texture: true, baseTexture: true });
-        } catch (e) {
-          console.warn('app.destroy failed', e);
-        }
-        appRef.current = null;
-      }
-
-      const app = new PIXI.Application({ backgroundAlpha: 0, resizeTo: holder, antialias: true });
-      appRef.current = app;
-
-      // Remove existing canvas inside holder (if any) and append
-      const existingCanvas = holder.querySelector('canvas');
-      if (existingCanvas) existingCanvas.remove();
-      holder.appendChild(app.view);
-
-      // draw body
-      const w = app.renderer?.width ?? 0;
-      const h = app.renderer?.height ?? 0;
-      const centerX = w / 2;
-      const centerY = h / 2 - 20;
-
-      const body = new PIXI.Graphics();
-      body.beginFill(0xd9c6ff).drawCircle(centerX, centerY, Math.min(w, h) * 0.26).endFill();
-      const belly = new PIXI.Graphics();
-      belly.beginFill(0xf8d5e7).drawEllipse(centerX, centerY + 40, Math.min(w, h) * 0.24, Math.min(w, h) * 0.16).endFill();
-      const shine = new PIXI.Graphics();
-      shine.beginFill(0xffffff, 0.7).drawCircle(centerX - 40, centerY - 50, 26).endFill();
-
-      const eyeOffset = Math.min(w, h) * 0.06;
-      const eyeL = new PIXI.Graphics();
-      eyeL.beginFill(0x000000).drawCircle(centerX - eyeOffset, centerY - 20, 8).endFill();
-      const eyeR = new PIXI.Graphics();
-      eyeR.beginFill(0x000000).drawCircle(centerX + eyeOffset, centerY - 20, 8).endFill();
-      const mouth = new PIXI.Graphics();
-      mouth
-        .lineStyle(5, 0x000000, 1)
-        .moveTo(centerX - 35, centerY + 10)
-        .quadraticCurveTo(centerX, centerY + 30, centerX + 35, centerY + 10);
-      const cheeks = new PIXI.Graphics();
-      cheeks
-        .beginFill(0xff8fb3, 0.5)
-        .drawCircle(centerX - 60, centerY - 5, 10)
-        .drawCircle(centerX + 60, centerY - 5, 10)
-        .endFill();
-
-      const face = new PIXI.Container();
-      face.addChild(body, belly, shine, eyeL, eyeR, mouth, cheeks);
-      app.stage.addChild(face);
-
-      faceRef.current = face;
-      eyeLRef.current = eyeL;
-      eyeRRef.current = eyeR;
-      mouthRef.current = mouth;
-      cheeksRef.current = cheeks;
-
-      ensureAccessoryContainers();
-
-      // wiggle animation
-      try {
-        gsap.to(app.stage, { y: '+=6', duration: 1.6, yoyo: true, repeat: -1, ease: 'sine.inOut' });
-        gsap.to(face.scale, { x: 1.02, y: 0.98, duration: 1.6, yoyo: true, repeat: -1, ease: 'sine.inOut' });
-      } catch (e) {}
-
-      drawAccessories();
-    } catch (err) {
-      console.error('initPixi error', err);
-      setSpeech('Error inicializando la mascota.');
-    }
-  }
-
-  function drawAccessories() {
-    const app = appRef.current;
-    // Guardas extra: solo dibuja si app y renderer están listos
-    if (!app || !app.renderer) return;
-    ensureAccessoryContainers();
-
-    [hatRef.current, glassesRef.current, scarfRef.current, backpackRef.current].forEach((c) => {
-      if (c && typeof c.removeChildren === 'function') c.removeChildren();
-    });
-
-    const centerX = app.renderer.width / 2;
-    const centerY = app.renderer.height / 2 - 20;
-
-    // Hats
-    if (state.hat === 'cap') {
-      const h = new PIXI.Graphics();
-      h.beginFill(0x8a6ad6).drawEllipse(centerX, centerY - 90, 80, 40).endFill();
-      hatRef.current.addChild(h);
-    } else if (state.hat === 'crown') {
-      const c = new PIXI.Graphics();
-      c
-        .beginFill(0xf7d34e)
-        .drawPolygon([
-          centerX - 60,
-          centerY - 75,
-          centerX + 60,
-          centerY - 75,
-          centerX + 30,
-          centerY - 110,
-          centerX,
-          centerY - 75,
-          centerX - 30,
-          centerY - 110,
-        ])
-        .endFill();
-      hatRef.current.addChild(c);
-    } else if (state.hat === 'beanie') {
-      const b = new PIXI.Graphics();
-      b.beginFill(0xffa6c9).drawEllipse(centerX, centerY - 80, 85, 45).endFill();
-      hatRef.current.addChild(b);
-    }
-
-    // Glasses
-    if (state.glasses === 'round') {
-      const gl = new PIXI.Graphics();
-      gl.lineStyle(5, 0x000000)
-        .drawCircle(centerX - 40, centerY - 20, 16)
-        .drawCircle(centerX + 40, centerY - 20, 16)
-        .moveTo(centerX - 24, centerY - 20)
-        .lineTo(centerX + 24, centerY - 20);
-      glassesRef.current.addChild(gl);
-    } else if (state.glasses === 'star') {
-      const s = new PIXI.Graphics();
-      s
-        .beginFill(0x000000)
-        .drawPolygon(drawStarPoints(centerX - 40, centerY - 20, 5, 16, 7))
-        .drawPolygon(drawStarPoints(centerX + 40, centerY - 20, 5, 16, 7))
-        .endFill();
-      glassesRef.current.addChild(s);
-    }
-
-    // Scarf / Backpack
-    if (state.scarf === 'scarf') {
-      const sc = new PIXI.Graphics();
-      sc.beginFill(0xff8fb3).drawRect(centerX - 40, centerY + 40, 80, 18).drawRect(centerX + 20, centerY + 40, 18, 40).endFill();
-      scarfRef.current.addChild(sc);
-    } else if (state.scarf === 'backpack') {
-      const bp = new PIXI.Graphics();
-      bp.beginFill(0x7cc4ff).drawRoundedRect(centerX - 90, centerY - 10, 60, 70, 14).endFill();
-      backpackRef.current.addChild(bp);
-    }
-  }
-
-  // Small animations
+  // Efectos mini
   function blink() {
     try {
-      if (!eyeLRef.current || !eyeRRef.current) return;
-      if (eyeLRef.current.scale) eyeLRef.current.scale.y = 0.2;
-      if (eyeRRef.current.scale) eyeRRef.current.scale.y = 0.2;
-      setTimeout(() => {
-        if (eyeLRef.current.scale) eyeLRef.current.scale.y = 1;
-        if (eyeRRef.current.scale) eyeRRef.current.scale.y = 1;
-      }, 220);
-    } catch (e) {
-      console.warn(e);
-    }
+      [eyeLRef.current, eyeRRef.current].forEach((el) => {
+        if (!el) return;
+        el.animate([{ transform: "scaleY(1)" }, { transform: "scaleY(.15)" }, { transform: "scaleY(1)" }], {
+          duration: 180, easing: "ease-in-out",
+        });
+      });
+    } catch {}
   }
 
   function smile() {
+    const mouth = mouthRef.current;
+    if (!mouth) return;
+    const neutral = "M180 200 Q250 230 320 200";
+    const happy = "M160 210 Q250 250 340 210";
+    mouth.setAttribute("d", happy);
     try {
-      if (!mouthRef.current || !appRef.current || !appRef.current.renderer) return;
-      mouthRef.current.clear();
-      mouthRef.current
-        .lineStyle(5, 0x000000)
-        .moveTo(appRef.current.renderer.width * 0.25, appRef.current.renderer.height * 0.45)
-        .quadraticCurveTo(
-          appRef.current.renderer.width * 0.5,
-          appRef.current.renderer.height * 0.55,
-          appRef.current.renderer.width * 0.75,
-          appRef.current.renderer.height * 0.45
-        );
-      setTimeout(() => {
-        drawAccessories();
-      }, 800);
-    } catch (e) {
-      console.warn(e);
-    }
+      petGroupRef.current?.animate([{ transform: "translateY(0)" }, { transform: "translateY(-8px)" }, { transform: "translateY(0)" }], {
+        duration: 420, easing: "ease-out",
+      });
+    } catch {}
+    setTimeout(() => mouth.setAttribute("d", neutral), 820);
   }
 
   function sleep() {
-    setSpeech('Zzz... 😴');
+    setSpeech("Zzz... 😴");
     try {
-      if (faceRef.current) gsap.to(faceRef.current, { alpha: 0.85, duration: 0.6, yoyo: true, repeat: 1 });
-    } catch (e) {}
+      petGroupRef.current?.animate([{ opacity: 1 }, { opacity: 0.85 }, { opacity: 1 }], {
+        duration: 600, easing: "ease-in-out",
+      });
+      const z = document.createElement("div");
+      z.textContent = "Zzz";
+      z.className = "zz";
+      petStageRef.current.appendChild(z);
+      z.animate([{ transform: "translateY(0)", opacity: 1 }, { transform: "translateY(-70px)", opacity: 0 }], {
+        duration: 1300, easing: "ease-out",
+      }).onfinish = () => z.remove();
+    } catch {}
   }
 
   function sparkle() {
     for (let i = 0; i < 12; i++) {
-      const d = document.createElement('div');
-      d.className = 'floaty star';
-      d.style.left = 10 + Math.random() * 80 + '%';
-      d.style.top = 10 + Math.random() * 60 + '%';
-      const iel = document.createElement('i');
+      const d = document.createElement("div");
+      d.className = "floaty star";
+      d.style.left = 10 + Math.random() * 80 + "%";
+      d.style.top = 10 + Math.random() * 60 + "%";
+      const iel = document.createElement("i");
       d.appendChild(iel);
       document.body.appendChild(d);
-      try {
-        gsap.to(d, { y: -80, opacity: 0, duration: 1 + Math.random(), onComplete: () => d.remove() });
-      } catch (e) {
-        setTimeout(() => d.remove(), 1000);
-      }
+      d.animate([{ transform: "translateY(0)", opacity: 1 }, { transform: "translateY(-90px)", opacity: 0 }], {
+        duration: 700 + Math.random() * 700, easing: "ease-out", fill: "forwards",
+      }).onfinish = () => d.remove();
     }
   }
 
   function celebrate() {
     try {
-      if (faceRef.current) gsap.to(faceRef.current, { rotation: 0.05, yoyo: true, repeat: 7, duration: 0.1 });
-    } catch (e) {}
+      petGroupRef.current?.animate(
+        [{ transform: "rotate(0)" }, { transform: "rotate(0.06rad)" }, { transform: "rotate(0)" }, { transform: "rotate(-0.06rad)" }, { transform: "rotate(0)" }],
+        { duration: 780, iterations: 2, easing: "ease-in-out" }
+      );
+    } catch {}
     sparkle();
+    heartBurst();
   }
 
   function ultraCelebrate() {
     try {
-      if (faceRef.current && faceRef.current.scale) gsap.to(faceRef.current.scale, { x: 1.08, y: 1.08, duration: 0.3, yoyo: true, repeat: 3 });
-    } catch (e) {}
-    setSpeech('¡Nivel de energía máximo! ¡Eres grandios@! ✨');
-    speak('¡Nivel de energía máximo! ¡Eres grandioso!');
+      petGroupRef.current?.animate([{ transform: "scale(1)" }, { transform: "scale(1.09)" }, { transform: "scale(1)" }], {
+        duration: 300, iterations: 3, easing: "ease-in-out",
+      });
+    } catch {}
+    setSpeech("¡Nivel de energía máximo! ¡Eres grandios@! ✨");
+    speak("¡Nivel de energía máximo! ¡Eres grandioso!");
+    heartBurst(24);
   }
 
-  // Feed
-  function feed() {
-    const holder = petCanvasHolderRef.current?.parentElement; // pet-stage is the parent of the holder
-    if (!holder) return;
-    const mochi = document.createElement('div');
-    mochi.textContent = '🍡';
-    mochi.style.position = 'absolute';
-    mochi.style.fontSize = '40px';
-    mochi.style.left = '10px';
-    mochi.style.bottom = '10px';
-    holder.appendChild(mochi);
-
-    try {
-      gsap.to(mochi, {
-        duration: 1.2,
-        x: 270,
-        y: -210,
-        ease: 'power1.inOut',
-        onComplete: () => {
-          chompRef.current && chompRef.current.play && chompRef.current.play();
-          mochi.remove();
-          setState((s) => {
-            const newEnergy = clamp(s.energy + 10, 0, 100);
-            const phrases = [
-              '¡Gracias por darme energía! 💪',
-              '¡Yum! Mochi power 🍡',
-              'Recuerda comer frutas ricas en hierro 🍓',
-              '¡Sigue así! Tu cuerpo te lo agradece ✨',
-            ];
-            const msg = phrases[Math.floor(Math.random() * phrases.length)];
-            setSpeech(msg);
-            speak(msg);
-            if (newEnergy >= 50) celebrate();
-            if (newEnergy >= 90) ultraCelebrate();
-            return { ...s, energy: newEnergy };
-          });
-        },
-      });
-    } catch (e) {
-      mochi.remove();
-      console.warn(e);
+  function heartBurst(n = 12) {
+    const box = petStageRef.current || document.body;
+    for (let i = 0; i < n; i++) {
+      const h = document.createElement("span");
+      h.className = "heart";
+      h.textContent = "💜";
+      h.style.left = (20 + Math.random() * 60) + "%";
+      h.style.bottom = (10 + Math.random() * 20) + "%";
+      box.appendChild(h);
+      h.animate(
+        [{ transform: "translateY(0) scale(1)", opacity: 1 }, { transform: `translate(${(Math.random()*40-20)}px, -120px) scale(${0.7 + Math.random()*0.6})`, opacity: 0 }],
+        { duration: 1200 + Math.random() * 600, easing: "ease-out", fill: "forwards" }
+      ).onfinish = () => h.remove();
     }
   }
 
-  // Calculation plan
+  // Feed
+  function feed(e) {
+    const stage = petStageRef.current;
+    if (!stage) return;
+    const mochi = document.createElement("div");
+    mochi.textContent = "🍡";
+    mochi.className = "mochi-shot";
+    stage.appendChild(mochi);
+
+    const keyframes = [
+      { transform: "translate(0,0) scale(1)", offset: 0, filter: "drop-shadow(0 0 0px rgba(0,0,0,0))" },
+      { transform: "translate(220px,-180px) scale(0.9)", offset: 0.6 },
+      { transform: "translate(270px,-210px) scale(0.85)", offset: 1, filter: "drop-shadow(0 6px 12px rgba(0,0,0,.2))" },
+    ];
+    mochi.animate(keyframes, { duration: 1100, easing: "ease-in-out" }).onfinish = () => {
+      chompRef.current?.currentTime && (chompRef.current.currentTime = 0);
+      chompRef.current?.play?.().catch?.(() => {});
+      mochi.remove();
+      setState((s) => {
+        const newEnergy = clamp(s.energy + 10, 0, 100);
+        const phrases = [
+          "¡Gracias por darme energía! 💪",
+          "¡Yum! Mochi power 🍡",
+          "Recuerda frutas ricas en hierro con vitamina C 🍓",
+          "¡Sigue así! Tu cuerpo te lo agradece ✨",
+        ];
+        const msg = phrases[Math.floor(Math.random() * phrases.length)];
+        setSpeech(msg);
+        speak(msg);
+        if (newEnergy >= 50) celebrate();
+        if (newEnergy >= 90) ultraCelebrate();
+        return { ...s, energy: newEnergy };
+      });
+      try {
+        petGroupRef.current?.querySelectorAll(".cheek").forEach((el) =>
+          el.animate([{ transform: "scale(1)" }, { transform: "scale(1.25)" }, { transform: "scale(1)" }], {
+            duration: 380, easing: "ease-out",
+          })
+        );
+      } catch {}
+    };
+  }
+
+  // Calculadora
   function calcPlan(ageVal, weightVal, hbVal) {
-    const age = parseFloat(ageVal || '0');
-    const weight = parseFloat(weightVal || '0');
-    const hb = parseFloat(hbVal || '0');
+    const age = parseFloat(ageVal || "0");
+    const weight = parseFloat(weightVal || "0");
+    const hb = parseFloat(hbVal || "0");
     let base = 2;
     if (age <= 6) base = 1;
     else if (age <= 12) base = 2;
     else base = 3;
     if (weight < 25) base = Math.max(1, base - 1);
     if (weight > 60) base += 1;
+
     let adjust = 0;
     if (hb && hb < 11.5) adjust = 1;
     if (hb && hb < 10.5) adjust = 2;
     if (hb && hb < 9.5) adjust = 3;
+
     const perDay = clamp(base + adjust, 1, 4);
     const perWeek = perDay * 7;
     const text =
-      `Recomendación estimada: \n${perDay} mochi(s) al día (≈ ${perWeek} a la semana).` +
-      (hb ? ` Con Hb ${hb} g/dL, te sugerimos cuidar la combinación hierro + vitamina C y consultar con un profesional de salud.` : '');
-    setSpeech('Con esta cantidad, pronto te sentirás con más energía.');
-    speak('Con esta cantidad, pronto te sentirás con más energía.');
+      `Recomendación estimada:\n${perDay} mochi(s) al día (≈ ${perWeek} a la semana).` +
+      (hb ? ` Con Hb ${hb} g/dL: combina hierro + vitamina C y, si es posible, consulta con un profesional de salud.` : "");
+
+    setSpeech("Con esta cantidad, pronto te sentirás con más energía.");
+    speak("Con esta cantidad, pronto te sentirás con más energía.");
     return text;
   }
+  function handleCalc() { setCalcResult(calcPlan(ageInput, weightInput, hbInput)); }
 
-  // Tips management
-  function nextTip() {
-    setTipIndex((i) => (i + 1) % tips.length);
-  }
-
-  // Floating mascot creation (background)
+  // Tips — auto-rotación con animación
   useEffect(() => {
-    const container = floatingContainerRef.current;
-    if (!container) return;
-    let intervalId = null;
-    function createMascot() {
-      const mascot = document.createElement('div');
-      mascot.classList.add('floating');
-      mascot.style.left = Math.random() * 100 + 'vw';
-      let size = 60 + Math.random() * 60;
-      mascot.style.width = size + 'px';
-      mascot.style.height = size + 'px';
-      mascot.style.animationDuration = 15 + Math.random() * 10 + 's';
-      mascot.style.animationDelay = Math.random() * 5 + 's';
-      container.appendChild(mascot);
-      setTimeout(() => mascot.remove(), 25000);
+    const id = setInterval(() => setTipIndex(i => (i + 1) % tips.length), 4200);
+    return () => clearInterval(id);
+  }, [tips.length]);
+
+  // Ripple en botones (delegado)
+  useEffect(() => {
+    function onClick(e) {
+      const btn = e.target.closest(".btn");
+      if (!btn) return;
+      const r = document.createElement("span");
+      r.className = "ripple";
+      const rect = btn.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      r.style.width = r.style.height = size + "px";
+      r.style.left = (e.clientX - rect.left - size / 2) + "px";
+      r.style.top = (e.clientY - rect.top - size / 2) + "px";
+      btn.appendChild(r);
+      setTimeout(() => r.remove(), 600);
     }
-    intervalId = setInterval(createMascot, 1500);
-    return () => clearInterval(intervalId);
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
   }, []);
 
-  // Initialize audio and PIXI on mount
-  useEffect(() => {
-    // Replace URLs with license-safe tracks in production
-    const MUSIC_URL =
-      'https://soundcloud.com/daniel-sullon-491393094/make_it_right?si=fbc34ea13df94e238fab0c9055b43973&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing';
-    const CHOMP_URL = MUSIC_URL;
-
-    try {
-      musicRef.current = new Howl({ src: [MUSIC_URL], loop: true, volume: 0.35, html5: true });
-      chompRef.current = new Howl({ src: [CHOMP_URL], volume: 0.6 });
-    } catch (e) {
-      console.warn('Howler init failed', e);
-    }
-
-    loadState();
-    initPixi();
-
-    // cleanup PIXI on unmount
-    return () => {
-      try {
-        if (appRef.current && typeof appRef.current.destroy === 'function') {
-          appRef.current.destroy(true, { children: true, texture: true, baseTexture: true });
-        }
-      } catch (e) {
-        console.warn(e);
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // re-draw accessories when state changes (hat/glasses/scarf) and update energy bar
-  useEffect(() => {
-    if (appRef.current && appRef.current.renderer) {
-      drawAccessories();
-    }
-    if (energyFillRef.current) {
-      energyFillRef.current.style.width = state.energy + '%';
-    }
-  }, [state.hat, state.glasses, state.scarf, state.energy]);
-
-  // Exposed small handlers for buttons in JSX
-  function handlePlayMusic() {
-    if (musicRef.current) musicRef.current.play();
+  // Accesorios SVG
+  function Hat() {
+    if (state.hat === "cap")
+      return <ellipse cx="250" cy="90" rx="80" ry="40" fill="#8a6ad6" className="hat floatUp" />;
+    if (state.hat === "crown")
+      return <path d="M190 105 L310 105 L290 60 L250 105 L210 60 Z" fill="#f7d34e" className="hat twinkle" />;
+    if (state.hat === "beanie")
+      return <ellipse cx="250" cy="100" rx="85" ry="45" fill="#ffa6c9" className="hat floatUp" />;
+    return null;
   }
-  function handleMuteMusic() {
-    if (musicRef.current) {
-      // toggle mute (Howler keeps internal state; .mute() accepts boolean)
-      const currentlyMuted = !!musicRef.current._muted;
-      musicRef.current.mute(!currentlyMuted);
-    }
+  function Glasses() {
+    if (state.glasses === "round")
+      return (
+        <g className="glasses">
+          <circle cx="210" cy="160" r="16" />
+          <circle cx="290" cy="160" r="16" />
+          <line x1="226" y1="160" x2="274" y2="160" />
+        </g>
+      );
+    if (state.glasses === "star")
+      return (
+        <g className="glasses">
+          <path d={starPath(210, 160, 5, 16, 7)} />
+          <path d={starPath(290, 160, 5, 16, 7)} />
+        </g>
+      );
+    return null;
   }
-
-  // Local controlled inputs
-  const [ageInput, setAgeInput] = useState('');
-  const [weightInput, setWeightInput] = useState('');
-  const [hbInput, setHbInput] = useState('');
-  const [calcResult, setCalcResult] = useState('—');
-
-  function handleCalc() {
-    const result = calcPlan(ageInput, weightInput, hbInput);
-    setCalcResult(result);
+  function ScarfOrBackpack() {
+    if (state.scarf === "scarf")
+      return (
+        <g className="scarf">
+          <rect x="210" y="220" width="80" height="18" rx="9" />
+          <rect x="290" y="220" width="18" height="40" rx="9" />
+        </g>
+      );
+    if (state.scarf === "backpack")
+      return <rect x="160" y="185" width="60" height="70" rx="14" className="backpack" />;
+    return null;
   }
-
-  // Save state effect when state changes (auto-save optional)
-  useEffect(() => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(state));
-    } catch (e) {}
-  }, [state]);
 
   return (
     <div className="mochitech-root">
-      <div className="floating-container" ref={floatingContainerRef} />
+      {/* Música y SFX (usa el mismo mp3 para un “chomp” leve) */}
+      <audio ref={musicRef} src={MUSIC_URL} preload="auto" />
+      <audio ref={chompRef} src={MUSIC_URL} preload="auto" />
+
+      {/* Fondo flotante */}
+      <div className="floating-container" ref={floatingContainerRef} aria-hidden="true" />
 
       <header className="header">
         <div className="wrap flex">
           <div className="brand">
             <img
-              alt="Logo mochi"
+              alt="Logo Mochitech"
               width={130}
               height={130}
               src="https://i.ibb.co/s9gQGMbR/Whats-App-Image-2025-08-13-at-8-37-13-PM.jpg"
-              style={{ filter: 'drop-shadow(0 4px 8px #0001)' }}
+              style={{ filter: "drop-shadow(0 4px 8px #0001)" }}
             />
-            <h1>
+            <h1 className="brandTitle">
               Mochitech <span className="subtitle">Sabor que da vida</span>
             </h1>
           </div>
-
           <div className="controls">
-            <button className="btn" onClick={handlePlayMusic}>
-              ▶ Música
-            </button>
-            <button className="btn secondary" onClick={handleMuteMusic}>
-              🔇 Silenciar
-            </button>
-            <button className="btn ghost" onClick={saveState}>
-              💾 Guardar
-            </button>
+            <button className="btn" onClick={handlePlayMusic} aria-label="Reproducir música">▶ Música</button>
+            <button className="btn secondary" onClick={handleMuteMusic} aria-label="Silenciar o activar música">🔇 Silenciar</button>
+            <button className="btn ghost" onClick={saveState}>💾 Guardar</button>
             <button
               className="btn ghost"
-              onClick={() => {
-                localStorage.removeItem(storageKey);
-                window.location.reload();
-              }}
+              onClick={() => { localStorage.removeItem(storageKey); window.location.reload(); }}
             >
               🧼 Reiniciar
             </button>
@@ -576,35 +483,71 @@ export default function Mochitech() {
       </header>
 
       <main className="wrap">
-        <section className="hero card">
+        <section className="hero card reveal">
           <div className="left">
-            <div id="pet-stage" className="pet-stage">
-              <div id="pet-canvas-holder" ref={petCanvasHolderRef} style={{ position: 'absolute', inset: 0 }} />
-              <div id="speech" ref={speechRef}>
-                ¡Hola! Soy <b id="petNameInline">{state.name}</b> 💜
+            <div className="pet-stage" ref={petStageRef}>
+              {/* Mascota (SVG) */}
+              <svg id="petSvg" viewBox="0 0 500 360" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mascota Mochitechito">
+                <defs>
+                  <radialGradient id="bodyG" cx="50%" cy="40%" r="65%">
+                    <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+                    <stop offset="100%" stopColor="#d9c6ff" />
+                  </radialGradient>
+                </defs>
+                <g id="pet" ref={petGroupRef}>
+                  {/* cuerpo */}
+                  <circle cx="250" cy="160" r="130" fill="url(#bodyG)" />
+                  <ellipse cx="250" cy="200" rx="120" ry="80" fill="#f8d5e7" opacity=".95" />
+                  <circle cx="210" cy="110" r="26" fill="#ffffff" opacity=".7" />
+                  {/* ojos */}
+                  <g ref={eyeLRef} className="eye" transform="translate(0,0)">
+                    <circle cx="210" cy="160" r="8" />
+                  </g>
+                  <g ref={eyeRRef} className="eye" transform="translate(0,0)">
+                    <circle cx="290" cy="160" r="8" />
+                  </g>
+                  {/* mejillas */}
+                  <g className="cheek">
+                    <circle cx="190" cy="170" r="10" />
+                  </g>
+                  <g className="cheek">
+                    <circle cx="310" cy="170" r="10" />
+                  </g>
+                  {/* boca */}
+                  <path ref={mouthRef} d="M180 200 Q250 230 320 200" className="mouth" />
+
+                  {/* Accesorios */}
+                  <Hat />
+                  <Glasses />
+                  <ScarfOrBackpack />
+                </g>
+              </svg>
+
+              {/* Globo de texto */}
+              <div id="speech" ref={speechRef} className="pop">
+                ¡Hola! Soy <b>{state.name}</b> 💜
               </div>
             </div>
 
-            <div className="flex" style={{ marginTop: 16 }}>
-              <div className="energy-bar" style={{ flex: 1 }}>
+            <div className="flex energyRow">
+              <div className="energy-bar" aria-label="Barra de energía" title="Energía">
                 <div id="energyFill" ref={energyFillRef} style={{ width: `${state.energy}%` }} />
+                <span className="shine" aria-hidden="true" />
               </div>
-              <strong id="energyText">Energía: {state.energy}%</strong>
-              <button className="btn" onClick={feed}>
-                🍡 Alimentar
-              </button>
+              <strong className="energyTxt">{state.energy}%</strong>
+              <button className="btn" onClick={feed}>🍡 Alimentar</button>
             </div>
           </div>
 
           <div className="right">
-            <h2>Personaliza a Mochitechito</h2>
+            <h2 className="gradientText">Personaliza a Mochitechito</h2>
             <div className="customizer">
               <label htmlFor="petName">Nombre</label>
               <input
                 id="petName"
-                value={state.name}
-                onChange={(e) => setState((s) => ({ ...s, name: e.target.value || 'Mochitechito' }))}
                 type="text"
+                value={state.name}
+                onChange={(e) => setState((s) => ({ ...s, name: e.target.value || "Mochitechito" }))}
                 placeholder="Mochi, Luna, Kira..."
               />
 
@@ -632,69 +575,73 @@ export default function Mochitech() {
             </div>
 
             <div className="flex" style={{ marginTop: 20 }}>
-              <button className="btn secondary" onClick={celebrate}>
-                ✨ Animación especial
-              </button>
-              <button className="btn ghost" onClick={() => speak('¡Sigue cuidándote! Come bien y muévete cada día.')}>
+              <button className="btn secondary" onClick={celebrate}>✨ Animación especial</button>
+              <button className="btn ghost" onClick={() => speak("¡Sigue cuidándote! Come bien y muévete cada día.")}>
                 🗣️ Decir consejo
               </button>
             </div>
 
             <p className="tiny" style={{ marginTop: 20 }}>
-              Frases con SpeechSynthesis. Música: reemplaza la URL por una versión libre de derechos.
+              Voz integrada del navegador, música instrumental suave al entrar.
             </p>
           </div>
         </section>
 
-        <section className="card about">
+        <section className="card about reveal">
           <div className="about-text">
             <h2>¿Qué es Mochitech?</h2>
             <p>
-              Mochitech es una iniciativa que combina nutrición y tecnología para combatir la anemia de forma divertida y educativa.
-              Mediante una mascota virtual personalizable y consejos de salud, buscamos motivar a niños, adolescentes y jóvenes a mantener
-              buenos hábitos alimenticios.
+              Mochitech une nutrición y tecnología para combatir la anemia de forma divertida.
+              Con una mascota virtual personalizable, consejos breves y una calculadora de consumo,
+              motivamos buenos hábitos diarios que favorecen la absorción de hierro.
             </p>
           </div>
           <div className="about-img">
-            <img src="https://i.ibb.co/VptQy80S/Whats-App-Image-2025-08-13-at-8-37-14-PM.jpg" alt="Mascota" />
+            <img src="https://i.ibb.co/VptQy80S/Whats-App-Image-2025-08-13-at-8-37-14-PM.jpg" alt="Mascota Mochitechito" />
           </div>
         </section>
 
-        <section className="card">
+        <section className="card reveal">
           <h2>Plan de Consumo</h2>
           <p>
-            Ingresa tu <b>edad</b>, <b>peso</b> y una <b>hemoglobina estimada</b> (g/dL). Te sugerimos una cantidad orientativa de mochis. <span className="tiny">(No sustituye consejo médico).</span>
+            Ingresa tu <b>edad</b>, <b>peso</b> y tu <b>hemoglobina estimada</b> (g/dL).
+            Te sugerimos una cantidad orientativa de mochis. <span className="tiny">(No sustituye consejo médico).</span>
           </p>
 
           <div className="two-col grid">
             <div className="grid inputs">
               <label>
-                Edad (años) <input id="age" type="number" min="1" max="99" value={ageInput} onChange={(e) => setAgeInput(e.target.value)} placeholder="10" />
+                Edad (años)
+                <input type="number" min="1" max="99" value={ageInput} onChange={(e) => setAgeInput(e.target.value)} placeholder="10" />
               </label>
               <label>
-                Peso (kg) <input id="weight" type="number" min="5" max="200" value={weightInput} onChange={(e) => setWeightInput(e.target.value)} placeholder="35" />
+                Peso (kg)
+                <input type="number" min="5" max="200" value={weightInput} onChange={(e) => setWeightInput(e.target.value)} placeholder="35" />
               </label>
               <label>
-                Hemoglobina (g/dL) <input id="hb" type="number" step="0.1" min="5" max="20" value={hbInput} onChange={(e) => setHbInput(e.target.value)} placeholder="11.5" />
+                Hemoglobina (g/dL)
+                <input
+                  type="number"
+                  step="0.1"
+                  min="5"
+                  max="20"
+                  value={hbInput}
+                  onChange={(e) => setHbInput(e.target.value)}
+                  placeholder="11.5"
+                />
               </label>
-              <button className="btn" id="calcBtn" onClick={handleCalc}>
-                📈 Calcular
-              </button>
+              <button className="btn" onClick={handleCalc}>📈 Calcular</button>
             </div>
 
             <div className="card result-card">
-              <h3 id="calcTitle">Resultado</h3>
-              <p id="calcText" style={{ whiteSpace: 'pre-wrap' }}>
-                {calcResult}
-              </p>
-              <p id="calcVoice" className="tiny">
-                Mochitechito dirá tu resultado en voz alta 💬
-              </p>
+              <h3>Resultado</h3>
+              <p className="calcText" style={{ whiteSpace: "pre-wrap" }}>{calcResult}</p>
+              <p className="tiny">Mochitechito leerá el resultado en voz alta 💬</p>
             </div>
           </div>
         </section>
 
-        <section className="card">
+        <section className="card reveal">
           <h2>Receta: Mochitech Power Berry</h2>
           <div className="two-col grid">
             <div>
@@ -721,47 +668,53 @@ export default function Mochitech() {
           </div>
         </section>
 
-        <section className="card">
+        <section className="card reveal">
           <h2>Consejos contra la anemia</h2>
-          <ul className="cute" id="tipsList">
+          <ul className="cute tipsList" id="tipsList" aria-live="polite">
             {tips.map((t, i) => (
-              <li key={i}>
-                {i === tipIndex ? '⭐ ' : ''}
+              <li key={i} className={i === tipIndex ? "tip active" : "tip"} onClick={() => { setTipIndex(i); speak(t); }}>
                 {t}
               </li>
             ))}
           </ul>
           <div className="flex" style={{ marginTop: 10 }}>
-            <button className="btn" id="nextTip" onClick={nextTip}>
-              💡 Siguiente consejo
-            </button>
-            <button className="btn secondary" id="sayTip" onClick={() => speak(tips[tipIndex])}>
-              🔊 Leer en voz alta
-            </button>
+            <button className="btn" onClick={() => setTipIndex((i) => (i + 1) % tips.length)}>💡 Siguiente consejo</button>
+            <button className="btn secondary" onClick={() => speak(tips[tipIndex])}>🔊 Leer en voz alta</button>
           </div>
         </section>
 
-        <section className="card">
+        <section className="card reveal">
           <h2>Mascota Virtual Interactiva</h2>
           <div className="flex">
-            <button className="btn" id="blinkBtn" onClick={blink}>
-              👀 Parpadear
-            </button>
-            <button className="btn" id="happyBtn" onClick={smile}>
-              😊 Sonrisa
-            </button>
-            <button className="btn" id="sleepBtn" onClick={sleep}>
-              😴 Dormir
-            </button>
+            <button className="btn" onClick={blink}>👀 Parpadear</button>
+            <button className="btn" onClick={smile}>😊 Sonrisa</button>
+            <button className="btn" onClick={sleep}>😴 Dormir</button>
           </div>
         </section>
 
         <footer>
-          <p className="tiny">
-            © 2025 Mochitech. Música: usa una versión instrumental libre de derechos o una pista propia inspirada en "Make It Right" (BTS). Sustituye la URL en el código según corresponda.
-          </p>
+          <p className="tiny">© 2025 Mochitech.</p>
         </footer>
       </main>
     </div>
   );
+}
+
+// ==== Intersection reveal (suave) ====
+if (typeof window !== "undefined") {
+  const runReveal = () => {
+    const els = document.querySelectorAll(".reveal");
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add("visible");
+          e.target.style.setProperty("--reveal-delay", (Math.random() * 0.2 + 0.05) + "s");
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    els.forEach(el => io.observe(el));
+  };
+  if (document.readyState !== "loading") runReveal();
+  else document.addEventListener("DOMContentLoaded", runReveal, { once: true });
 }
