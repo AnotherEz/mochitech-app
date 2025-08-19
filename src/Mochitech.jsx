@@ -51,7 +51,7 @@ export default function Mochitech() {
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
   const starPath = (cx, cy, spikes, R, r) => {
-    let rot = Math.PI / 2 * 3;
+    let rot = (Math.PI / 2) * 3;
     const step = Math.PI / spikes;
     const pts = [];
     for (let i = 0; i < spikes; i++) {
@@ -301,7 +301,10 @@ export default function Mochitech() {
       h.style.bottom = (10 + Math.random() * 20) + "%";
       box.appendChild(h);
       h.animate(
-        [{ transform: "translateY(0) scale(1)", opacity: 1 }, { transform: `translate(${(Math.random()*40-20)}px, -120px) scale(${0.7 + Math.random()*0.6})`, opacity: 0 }],
+        [
+          { transform: "translateY(0) scale(1)", opacity: 1 },
+          { transform: `translate(${(Math.random() * 40 - 20)}px, -120px) scale(${0.7 + Math.random() * 0.6})`, opacity: 0 }
+        ],
         { duration: 1200 + Math.random() * 600, easing: "ease-out", fill: "forwards" }
       ).onfinish = () => h.remove();
     }
@@ -531,7 +534,7 @@ export default function Mochitech() {
 
             <div className="flex energyRow">
               <div className="energy-bar" aria-label="Barra de energía" title="Energía">
-                <div id="energyFill" ref={energyFillRef} style={{ width: `${state.energy}%` }} />
+                <div id="energyFill" ref={energyFillRef} style={{ width: state.energy + "%" }} />
                 <span className="shine" aria-hidden="true" />
               </div>
               <strong className="energyTxt">{state.energy}%</strong>
@@ -577,7 +580,7 @@ export default function Mochitech() {
             <div className="flex" style={{ marginTop: 20 }}>
               <button className="btn secondary" onClick={celebrate}>✨ Animación especial</button>
               <button className="btn ghost" onClick={() => speak("¡Sigue cuidándote! Come bien y muévete cada día.")}>
-                🗣️ Decir consejo
+                🗣 Decir consejo
               </button>
             </div>
 
