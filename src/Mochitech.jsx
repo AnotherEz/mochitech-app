@@ -2,11 +2,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as PIXI from 'pixi.js';
 import { Howl } from 'howler';
 import { gsap } from 'gsap';
-import './Mochitech.css';
+import './App.css';
 
 // React conversion and modernization of the original HTML file.
 // - Default export is the component Mochitech
-// - The CSS content for Mochitech.css is included at the bottom of this file as a comment; copy it to ./Mochitech.css
 // - Install required packages: npm install pixi.js howler gsap
 
 export default function Mochitech() {
@@ -149,7 +148,7 @@ export default function Mochitech() {
 
     try {
       // Destroy previous app if exists
-      if (appRef.current) {
+      if (appRef.current && typeof appRef.current.destroy === 'function') {
         try {
           appRef.current.destroy(true, { children: true, texture: true, baseTexture: true });
         } catch (e) {
@@ -167,8 +166,8 @@ export default function Mochitech() {
       holder.appendChild(app.view);
 
       // draw body
-      const w = app.renderer.width;
-      const h = app.renderer.height;
+      const w = app.renderer?.width ?? 0;
+      const h = app.renderer?.height ?? 0;
       const centerX = w / 2;
       const centerY = h / 2 - 20;
 
@@ -185,9 +184,16 @@ export default function Mochitech() {
       const eyeR = new PIXI.Graphics();
       eyeR.beginFill(0x000000).drawCircle(centerX + eyeOffset, centerY - 20, 8).endFill();
       const mouth = new PIXI.Graphics();
-      mouth.lineStyle(5, 0x000000, 1).moveTo(centerX - 35, centerY + 10).quadraticCurveTo(centerX, centerY + 30, centerX + 35, centerY + 10);
+      mouth
+        .lineStyle(5, 0x000000, 1)
+        .moveTo(centerX - 35, centerY + 10)
+        .quadraticCurveTo(centerX, centerY + 30, centerX + 35, centerY + 10);
       const cheeks = new PIXI.Graphics();
-      cheeks.beginFill(0xff8fb3, 0.5).drawCircle(centerX - 60, centerY - 5, 10).drawCircle(centerX + 60, centerY - 5, 10).endFill();
+      cheeks
+        .beginFill(0xff8fb3, 0.5)
+        .drawCircle(centerX - 60, centerY - 5, 10)
+        .drawCircle(centerX + 60, centerY - 5, 10)
+        .endFill();
 
       const face = new PIXI.Container();
       face.addChild(body, belly, shine, eyeL, eyeR, mouth, cheeks);
@@ -216,7 +222,8 @@ export default function Mochitech() {
 
   function drawAccessories() {
     const app = appRef.current;
-    if (!app) return;
+    // Guardas extra: solo dibuja si app y renderer están listos
+    if (!app || !app.renderer) return;
     ensureAccessoryContainers();
 
     [hatRef.current, glassesRef.current, scarfRef.current, backpackRef.current].forEach((c) => {
@@ -233,7 +240,21 @@ export default function Mochitech() {
       hatRef.current.addChild(h);
     } else if (state.hat === 'crown') {
       const c = new PIXI.Graphics();
-      c.beginFill(0xf7d34e).drawPolygon([centerX - 60, centerY - 75, centerX + 60, centerY - 75, centerX + 30, centerY - 110, centerX, centerY - 75, centerX - 30, centerY - 110]).endFill();
+      c
+        .beginFill(0xf7d34e)
+        .drawPolygon([
+          centerX - 60,
+          centerY - 75,
+          centerX + 60,
+          centerY - 75,
+          centerX + 30,
+          centerY - 110,
+          centerX,
+          centerY - 75,
+          centerX - 30,
+          centerY - 110,
+        ])
+        .endFill();
       hatRef.current.addChild(c);
     } else if (state.hat === 'beanie') {
       const b = new PIXI.Graphics();
@@ -244,11 +265,19 @@ export default function Mochitech() {
     // Glasses
     if (state.glasses === 'round') {
       const gl = new PIXI.Graphics();
-      gl.lineStyle(5, 0x000000).drawCircle(centerX - 40, centerY - 20, 16).drawCircle(centerX + 40, centerY - 20, 16).moveTo(centerX - 24, centerY - 20).lineTo(centerX + 24, centerY - 20);
+      gl.lineStyle(5, 0x000000)
+        .drawCircle(centerX - 40, centerY - 20, 16)
+        .drawCircle(centerX + 40, centerY - 20, 16)
+        .moveTo(centerX - 24, centerY - 20)
+        .lineTo(centerX + 24, centerY - 20);
       glassesRef.current.addChild(gl);
     } else if (state.glasses === 'star') {
       const s = new PIXI.Graphics();
-      s.beginFill(0x000000).drawPolygon(drawStarPoints(centerX - 40, centerY - 20, 5, 16, 7)).drawPolygon(drawStarPoints(centerX + 40, centerY - 20, 5, 16, 7)).endFill();
+      s
+        .beginFill(0x000000)
+        .drawPolygon(drawStarPoints(centerX - 40, centerY - 20, 5, 16, 7))
+        .drawPolygon(drawStarPoints(centerX + 40, centerY - 20, 5, 16, 7))
+        .endFill();
       glassesRef.current.addChild(s);
     }
 
@@ -281,9 +310,17 @@ export default function Mochitech() {
 
   function smile() {
     try {
-      if (!mouthRef.current || !appRef.current) return;
+      if (!mouthRef.current || !appRef.current || !appRef.current.renderer) return;
       mouthRef.current.clear();
-      mouthRef.current.lineStyle(5, 0x000000).moveTo(appRef.current.renderer.width * 0.25, appRef.current.renderer.height * 0.45).quadraticCurveTo(appRef.current.renderer.width * 0.5, appRef.current.renderer.height * 0.55, appRef.current.renderer.width * 0.75, appRef.current.renderer.height * 0.45);
+      mouthRef.current
+        .lineStyle(5, 0x000000)
+        .moveTo(appRef.current.renderer.width * 0.25, appRef.current.renderer.height * 0.45)
+        .quadraticCurveTo(
+          appRef.current.renderer.width * 0.5,
+          appRef.current.renderer.height * 0.55,
+          appRef.current.renderer.width * 0.75,
+          appRef.current.renderer.height * 0.45
+        );
       setTimeout(() => {
         drawAccessories();
       }, 800);
@@ -392,7 +429,9 @@ export default function Mochitech() {
     if (hb && hb < 9.5) adjust = 3;
     const perDay = clamp(base + adjust, 1, 4);
     const perWeek = perDay * 7;
-    const text = `Recomendación estimada: \n${perDay} mochi(s) al día (≈ ${perWeek} a la semana).` + (hb ? ` Con Hb ${hb} g/dL, te sugerimos cuidar la combinación hierro + vitamina C y consultar con un profesional de salud.` : '');
+    const text =
+      `Recomendación estimada: \n${perDay} mochi(s) al día (≈ ${perWeek} a la semana).` +
+      (hb ? ` Con Hb ${hb} g/dL, te sugerimos cuidar la combinación hierro + vitamina C y consultar con un profesional de salud.` : '');
     setSpeech('Con esta cantidad, pronto te sentirás con más energía.');
     speak('Con esta cantidad, pronto te sentirás con más energía.');
     return text;
@@ -427,7 +466,8 @@ export default function Mochitech() {
   // Initialize audio and PIXI on mount
   useEffect(() => {
     // Replace URLs with license-safe tracks in production
-    const MUSIC_URL = 'https://soundcloud.com/daniel-sullon-491393094/make_it_right?si=fbc34ea13df94e238fab0c9055b43973&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing';
+    const MUSIC_URL =
+      'https://soundcloud.com/daniel-sullon-491393094/make_it_right?si=fbc34ea13df94e238fab0c9055b43973&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing';
     const CHOMP_URL = MUSIC_URL;
 
     try {
@@ -443,7 +483,9 @@ export default function Mochitech() {
     // cleanup PIXI on unmount
     return () => {
       try {
-        if (appRef.current) appRef.current.destroy(true, { children: true, texture: true, baseTexture: true });
+        if (appRef.current && typeof appRef.current.destroy === 'function') {
+          appRef.current.destroy(true, { children: true, texture: true, baseTexture: true });
+        }
       } catch (e) {
         console.warn(e);
       }
@@ -451,11 +493,14 @@ export default function Mochitech() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // re-draw accessories when state changes (hat/glasses/scarf)
+  // re-draw accessories when state changes (hat/glasses/scarf) and update energy bar
   useEffect(() => {
-    if (appRef.current) drawAccessories();
-    // update energy UI element
-    if (energyFillRef.current) energyFillRef.current.style.width = state.energy + '%';
+    if (appRef.current && appRef.current.renderer) {
+      drawAccessories();
+    }
+    if (energyFillRef.current) {
+      energyFillRef.current.style.width = state.energy + '%';
+    }
   }, [state.hat, state.glasses, state.scarf, state.energy]);
 
   // Exposed small handlers for buttons in JSX
@@ -464,8 +509,9 @@ export default function Mochitech() {
   }
   function handleMuteMusic() {
     if (musicRef.current) {
-      const muted = !musicRef.current._muted; // Howler internals
-      musicRef.current.mute(muted);
+      // toggle mute (Howler keeps internal state; .mute() accepts boolean)
+      const currentlyMuted = !!musicRef.current._muted;
+      musicRef.current.mute(!currentlyMuted);
     }
   }
 
@@ -501,14 +547,30 @@ export default function Mochitech() {
               src="https://i.ibb.co/s9gQGMbR/Whats-App-Image-2025-08-13-at-8-37-13-PM.jpg"
               style={{ filter: 'drop-shadow(0 4px 8px #0001)' }}
             />
-            <h1>Mochitech <span className="subtitle">Sabor que da vida</span></h1>
+            <h1>
+              Mochitech <span className="subtitle">Sabor que da vida</span>
+            </h1>
           </div>
 
           <div className="controls">
-            <button className="btn" onClick={handlePlayMusic}>▶ Música</button>
-            <button className="btn secondary" onClick={handleMuteMusic}>🔇 Silenciar</button>
-            <button className="btn ghost" onClick={saveState}>💾 Guardar</button>
-            <button className="btn ghost" onClick={() => { localStorage.removeItem(storageKey); window.location.reload(); }}>🧼 Reiniciar</button>
+            <button className="btn" onClick={handlePlayMusic}>
+              ▶ Música
+            </button>
+            <button className="btn secondary" onClick={handleMuteMusic}>
+              🔇 Silenciar
+            </button>
+            <button className="btn ghost" onClick={saveState}>
+              💾 Guardar
+            </button>
+            <button
+              className="btn ghost"
+              onClick={() => {
+                localStorage.removeItem(storageKey);
+                window.location.reload();
+              }}
+            >
+              🧼 Reiniciar
+            </button>
           </div>
         </div>
       </header>
@@ -518,7 +580,9 @@ export default function Mochitech() {
           <div className="left">
             <div id="pet-stage" className="pet-stage">
               <div id="pet-canvas-holder" ref={petCanvasHolderRef} style={{ position: 'absolute', inset: 0 }} />
-              <div id="speech" ref={speechRef}>¡Hola! Soy <b id="petNameInline">{state.name}</b> 💜</div>
+              <div id="speech" ref={speechRef}>
+                ¡Hola! Soy <b id="petNameInline">{state.name}</b> 💜
+              </div>
             </div>
 
             <div className="flex" style={{ marginTop: 16 }}>
@@ -526,7 +590,9 @@ export default function Mochitech() {
                 <div id="energyFill" ref={energyFillRef} style={{ width: `${state.energy}%` }} />
               </div>
               <strong id="energyText">Energía: {state.energy}%</strong>
-              <button className="btn" onClick={feed}>🍡 Alimentar</button>
+              <button className="btn" onClick={feed}>
+                🍡 Alimentar
+              </button>
             </div>
           </div>
 
@@ -534,7 +600,13 @@ export default function Mochitech() {
             <h2>Personaliza a Mochitechito</h2>
             <div className="customizer">
               <label htmlFor="petName">Nombre</label>
-              <input id="petName" value={state.name} onChange={(e) => setState((s) => ({ ...s, name: e.target.value || 'Mochitechito' }))} type="text" placeholder="Mochi, Luna, Kira..." />
+              <input
+                id="petName"
+                value={state.name}
+                onChange={(e) => setState((s) => ({ ...s, name: e.target.value || 'Mochitechito' }))}
+                type="text"
+                placeholder="Mochi, Luna, Kira..."
+              />
 
               <label htmlFor="hat">Sombrero</label>
               <select id="hat" value={state.hat} onChange={(e) => setState((s) => ({ ...s, hat: e.target.value }))}>
@@ -560,11 +632,17 @@ export default function Mochitech() {
             </div>
 
             <div className="flex" style={{ marginTop: 20 }}>
-              <button className="btn secondary" onClick={celebrate}>✨ Animación especial</button>
-              <button className="btn ghost" onClick={() => speak('¡Sigue cuidándote! Come bien y muévete cada día.')}>🗣️ Decir consejo</button>
+              <button className="btn secondary" onClick={celebrate}>
+                ✨ Animación especial
+              </button>
+              <button className="btn ghost" onClick={() => speak('¡Sigue cuidándote! Come bien y muévete cada día.')}>
+                🗣️ Decir consejo
+              </button>
             </div>
 
-            <p className="tiny" style={{ marginTop: 20 }}>Frases con SpeechSynthesis. Música: reemplaza la URL por una versión libre de derechos.</p>
+            <p className="tiny" style={{ marginTop: 20 }}>
+              Frases con SpeechSynthesis. Música: reemplaza la URL por una versión libre de derechos.
+            </p>
           </div>
         </section>
 
@@ -572,9 +650,9 @@ export default function Mochitech() {
           <div className="about-text">
             <h2>¿Qué es Mochitech?</h2>
             <p>
-              Mochitech es una iniciativa que combina nutrición y tecnología para combatir la anemia de forma divertida y educativa. 
-              Mediante una mascota virtual personalizable y consejos de salud, buscamos motivar a niños, adolescentes y jóvenes 
-              a mantener buenos hábitos alimenticios.
+              Mochitech es una iniciativa que combina nutrición y tecnología para combatir la anemia de forma divertida y educativa.
+              Mediante una mascota virtual personalizable y consejos de salud, buscamos motivar a niños, adolescentes y jóvenes a mantener
+              buenos hábitos alimenticios.
             </p>
           </div>
           <div className="about-img">
@@ -584,20 +662,34 @@ export default function Mochitech() {
 
         <section className="card">
           <h2>Plan de Consumo</h2>
-          <p>Ingresa tu <b>edad</b>, <b>peso</b> y una <b>hemoglobina estimada</b> (g/dL). Te sugerimos una cantidad orientativa de mochis. <span className="tiny">(No sustituye consejo médico).</span></p>
+          <p>
+            Ingresa tu <b>edad</b>, <b>peso</b> y una <b>hemoglobina estimada</b> (g/dL). Te sugerimos una cantidad orientativa de mochis. <span className="tiny">(No sustituye consejo médico).</span>
+          </p>
 
           <div className="two-col grid">
             <div className="grid inputs">
-              <label>Edad (años) <input id="age" type="number" min="1" max="99" value={ageInput} onChange={(e) => setAgeInput(e.target.value)} placeholder="10" /></label>
-              <label>Peso (kg) <input id="weight" type="number" min="5" max="200" value={weightInput} onChange={(e) => setWeightInput(e.target.value)} placeholder="35" /></label>
-              <label>Hemoglobina (g/dL) <input id="hb" type="number" step="0.1" min="5" max="20" value={hbInput} onChange={(e) => setHbInput(e.target.value)} placeholder="11.5" /></label>
-              <button className="btn" id="calcBtn" onClick={handleCalc}>📈 Calcular</button>
+              <label>
+                Edad (años) <input id="age" type="number" min="1" max="99" value={ageInput} onChange={(e) => setAgeInput(e.target.value)} placeholder="10" />
+              </label>
+              <label>
+                Peso (kg) <input id="weight" type="number" min="5" max="200" value={weightInput} onChange={(e) => setWeightInput(e.target.value)} placeholder="35" />
+              </label>
+              <label>
+                Hemoglobina (g/dL) <input id="hb" type="number" step="0.1" min="5" max="20" value={hbInput} onChange={(e) => setHbInput(e.target.value)} placeholder="11.5" />
+              </label>
+              <button className="btn" id="calcBtn" onClick={handleCalc}>
+                📈 Calcular
+              </button>
             </div>
 
             <div className="card result-card">
               <h3 id="calcTitle">Resultado</h3>
-              <p id="calcText" style={{ whiteSpace: 'pre-wrap' }}>{calcResult}</p>
-              <p id="calcVoice" className="tiny">Mochitechito dirá tu resultado en voz alta 💬</p>
+              <p id="calcText" style={{ whiteSpace: 'pre-wrap' }}>
+                {calcResult}
+              </p>
+              <p id="calcVoice" className="tiny">
+                Mochitechito dirá tu resultado en voz alta 💬
+              </p>
             </div>
           </div>
         </section>
@@ -633,29 +725,43 @@ export default function Mochitech() {
           <h2>Consejos contra la anemia</h2>
           <ul className="cute" id="tipsList">
             {tips.map((t, i) => (
-              <li key={i}>{i === tipIndex ? '⭐ ' : ''}{t}</li>
+              <li key={i}>
+                {i === tipIndex ? '⭐ ' : ''}
+                {t}
+              </li>
             ))}
           </ul>
           <div className="flex" style={{ marginTop: 10 }}>
-            <button className="btn" id="nextTip" onClick={nextTip}>💡 Siguiente consejo</button>
-            <button className="btn secondary" id="sayTip" onClick={() => speak(tips[tipIndex])}>🔊 Leer en voz alta</button>
+            <button className="btn" id="nextTip" onClick={nextTip}>
+              💡 Siguiente consejo
+            </button>
+            <button className="btn secondary" id="sayTip" onClick={() => speak(tips[tipIndex])}>
+              🔊 Leer en voz alta
+            </button>
           </div>
         </section>
 
         <section className="card">
           <h2>Mascota Virtual Interactiva</h2>
           <div className="flex">
-            <button className="btn" id="blinkBtn" onClick={blink}>👀 Parpadear</button>
-            <button className="btn" id="happyBtn" onClick={smile}>😊 Sonrisa</button>
-            <button className="btn" id="sleepBtn" onClick={sleep}>😴 Dormir</button>
+            <button className="btn" id="blinkBtn" onClick={blink}>
+              👀 Parpadear
+            </button>
+            <button className="btn" id="happyBtn" onClick={smile}>
+              😊 Sonrisa
+            </button>
+            <button className="btn" id="sleepBtn" onClick={sleep}>
+              😴 Dormir
+            </button>
           </div>
         </section>
 
         <footer>
-          <p className="tiny">© 2025 Mochitech. Música: usa una versión instrumental libre de derechos o una pista propia inspirada en "Make It Right" (BTS). Sustituye la URL en el código según corresponda.</p>
+          <p className="tiny">
+            © 2025 Mochitech. Música: usa una versión instrumental libre de derechos o una pista propia inspirada en "Make It Right" (BTS). Sustituye la URL en el código según corresponda.
+          </p>
         </footer>
       </main>
     </div>
   );
 }
-
