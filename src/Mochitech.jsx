@@ -479,7 +479,7 @@ useEffect(() => {
               alt="Logo Mochitech"
               width={130}
               height={130}
-              src="./../public/logo.png"
+              src="https://mochitech-app.vercel.app/logo.png"
               style={{ filter: "drop-shadow(0 4px 8px #0001)" }}
             />
             <h1 className="brandTitle">
