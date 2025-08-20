@@ -1,13 +1,43 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+    <title>Mochitech — IEP EL TRIUNFO</title>
+    <meta name="description" content="Mochitech — mascota interactiva y recursos educativos del IEP EL TRIUNFO para promover hábitos nutritivos y prevenir la anemia." />
+    <meta name="author" content="IEP EL TRIUNFO" />
+
+    <!-- favicon / logo (coloca logo.png en /public) -->
+    <link rel="icon" type="image/png" href="/logo.png" />
+
+    <!-- Open Graph / Twitter (lista para compartir) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Mochitech" />
+    <meta property="og:title" content="Mochitech — IEP EL TRIUNFO" />
+    <meta property="og:description" content="Mascota virtual, consejos y calculadora orientativa para fomentar hábitos nutricionales. Proyecto del IEP EL TRIUNFO." />
+    <meta property="og:url" content="https://mochitech-app.vercel.app/" />
+    <meta property="og:image" content="https://mochitech-app.vercel.app/logo.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Mochitech — IEP EL TRIUNFO" />
+    <meta name="twitter:description" content="Mascota virtual y recursos para hábitos saludables. Proyecto del IEP EL TRIUNFO." />
+    <meta name="twitter:image" content="https://mochitech-app.vercel.app/logo.png" />
+
+    <!-- color de tema -->
+    <meta name="theme-color" content="#f7b0d9" />
+
+    <!-- Fuente (opcional pero incluida) -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
+
+    <!-- script principal (Vite) -->
+    <script type="module" src="/src/main.jsx" defer></script>
   </head>
+
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <div id="root">
+      <noscript style="font-family:system-ui,Arial,sans-serif;padding:24px;text-align:center;">
+        Mochitech — Proyecto del IEP EL TRIUNFO. Habilita JavaScript para ver la demo.
+      </noscript>
+    </div>
   </body>
 </html>

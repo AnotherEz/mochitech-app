@@ -479,7 +479,7 @@ useEffect(() => {
               alt="Logo Mochitech"
               width={130}
               height={130}
-              src="https://i.ibb.co/s9gQGMbR/Whats-App-Image-2025-08-13-at-8-37-13-PM.jpg"
+              src="./../public/logo.png"
               style={{ filter: "drop-shadow(0 4px 8px #0001)" }}
             />
             <h1 className="brandTitle">
