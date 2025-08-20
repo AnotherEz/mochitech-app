@@ -118,6 +118,12 @@ export default function Mochitech() {
       if (raw) setState(s => ({ ...s, ...JSON.parse(raw) }));
     } catch {}
   }
+// Actualizar título del navegador cuando cambie el nombre
+useEffect(() => {
+  try {
+    document.title = `${state.name} — Mochitech`;
+  } catch {}
+}, [state.name]);
 
   // Fondo flotante + parallax suave
   useEffect(() => {
@@ -477,8 +483,11 @@ export default function Mochitech() {
               style={{ filter: "drop-shadow(0 4px 8px #0001)" }}
             />
             <h1 className="brandTitle">
-              Mochitech <span className="subtitle">Sabor que da vida</span>
-            </h1>
+            <span className="brandName">{state.name}</span>
+            <span className="subtitle">Sabor que da vida</span>
+          </h1>
+
+
           </div>
           <div className="controls">
             <button className="btn" onClick={handlePlayMusic} aria-label="Reproducir música">▶ Música</button>
@@ -735,14 +744,6 @@ export default function Mochitech() {
           </div>
         </section>
 
-        <section className="card reveal">
-          <h2>Mascota Virtual Interactiva</h2>
-          <div className="flex">
-            <button className="btn" onClick={blink}>👀 Parpadear</button>
-            <button className="btn" onClick={smile}>😊 Sonrisa</button>
-            <button className="btn" onClick={sleep}>😴 Dormir</button>
-          </div>
-        </section>
 
         <footer className="site-footer">
                 <div className="wrap">

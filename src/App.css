@@ -374,3 +374,281 @@ footer{padding:30px 20px 80px; text-align:center; opacity:.8}
 }
 .site-footer .muted{ display:block; font-size:12px; opacity:.7; margin-top:6px; }
 
+
+
+/* =========================
+   Nombre animado + brillitos
+   ========================= */
+.brandTitle { display:flex; flex-direction:column; gap:4px; line-height:1; }
+.brandName {
+  font-weight:900;
+  font-size:clamp(22px,4vw,36px);
+  background: linear-gradient(90deg,#ff02dd,#ff559f,#ffe374,#5eaaf1);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  background-size: 250% 100%;
+  animation: brandGradient 6s linear infinite;
+  position: relative;
+  display: inline-block;
+  padding-right: 8px;
+  text-shadow: 0 6px 18px rgba(107,74,170,0.12);
+  will-change: transform;
+}
+
+/* brillo sutil: pseudo elemento con "sparkles" usando box-shadow */
+.brandName::after{
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: -8px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.9;
+  filter: drop-shadow(0 2px 6px rgba(255,255,255,0.6));
+  box-shadow:
+    28px 4px 0 0 #fff3,
+    56px -6px 0 0 #fff3,
+    90px 8px 0 0 #fff3,
+    -18px 6px 0 0 #fff3;
+  transform-origin: center;
+  animation: brandSparkle 3.2s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes brandGradient {
+  0% { background-position: 0% 50% }
+  50% { background-position: 100% 50% }
+  100% { background-position: 0% 50% }
+}
+@keyframes brandSparkle {
+  0% { opacity: .0; transform: translateY(-2px) scale(.8) rotate(0deg); filter: blur(.5px) }
+  10% { opacity: 1; transform: translateY(0) scale(1.05) rotate(6deg) }
+  40% { opacity: .5; transform: translateY(-2px) scale(.95) rotate(-6deg) }
+  100% { opacity: 0; transform: translateY(-6px) scale(.8) rotate(0deg) }
+}
+
+/* cuando el usuario cambia el nombre, añadimos un pequeño "pop" visual (opcional) */
+.brandName.changed {
+  animation: brandPop 600ms cubic-bezier(.2,1,.3,1);
+}
+@keyframes brandPop {
+  0% { transform: scale(.96) }
+  60% { transform: scale(1.06) }
+  100% { transform: scale(1) }
+}
+
+/* =========================
+   Floating logos / mascota (mejoradas)
+   ========================= */
+.floating-container{ position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:0; }
+.floating{
+  position:absolute;
+  background-image: url("https://i.ibb.co/s9gQGMbR/Whats-App-Image-2025-08-13-at-8-37-13-PM.jpg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: .85;
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,0.12)) saturate(1.05);
+  transform-origin: center;
+  will-change: transform, opacity;
+  animation-name: floatMove, floatRotate, floatFade;
+  animation-duration: var(--d, 14s), calc(var(--d,14s) * 1.2), var(--d,14s);
+  animation-timing-function: linear, ease-in-out, ease-in-out;
+  animation-iteration-count: infinite, infinite, infinite;
+}
+
+/* movimiento vertical/diagonal */
+@keyframes floatMove {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1) }
+  25% { transform: translate3d(12vw, -18vh, 0) rotate(30deg) scale(1.02) }
+  50% { transform: translate3d(-8vw, -40vh, 0) rotate(180deg) scale(.96) }
+  75% { transform: translate3d(14vw, -70vh, 0) rotate(260deg) scale(1.01) }
+  100% { transform: translate3d(0, -110vh, 0) rotate(360deg) scale(1) }
+}
+
+/* rotación sutil */
+@keyframes floatRotate {
+  0%{ transform: rotate(0deg) }
+  50%{ transform: rotate(180deg) }
+  100%{ transform: rotate(360deg) }
+}
+
+/* pequeña variación de opacidad */
+@keyframes floatFade {
+  0%{ opacity:.9 }
+  50%{ opacity:.6 }
+  100%{ opacity:.0 }
+}
+
+/* si quieres que algunos sean más transparentes */
+.floating.small { opacity: .6; filter: blur(.2px) }
+.floating.large { opacity: .95 }
+
+/* =========================
+   Nombre animado: activación desde React (clase .changed)
+   ========================= */
+/* ya definido más arriba: .brandName.changed */
+
+/* =========================
+   Footer (mejorado)
+   ========================= */
+.site-footer{
+  padding:18px 12px 40px;
+  text-align:center;
+  color:var(--ink);
+  opacity:0.95;
+  border-top:1px dashed #ffffff22;
+  margin-top:18px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+}
+.site-footer p{ margin:0; font-size:14px; }
+.site-footer .muted{ display:block; font-size:12px; opacity:.78; margin-top:6px; }
+
+/* =========================
+   Preferencias de reducción de movimiento
+   ========================= */
+@media (prefers-reduced-motion: reduce) {
+  .brandName::after, .brandName, .floating, .member-card, .avatar { animation: none !important; transition: none !important; }
+}
+/* ===========================
+   Cute stars background + mochi + ropa más grande
+   Pegar al final de App.css
+   =========================== */
+
+/* 1) Fondo de brillitos (reemplaza cualquier body::before que tenga logo cuadricula) */
+body::before{
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  /* estrella-cute SVG repetida (opacidad baja para no competir con contenido) */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M16%202%20L19%2012%20L30%2012%20L21%2018%20L24%2030%20L16%2023%20L8%2030%20L11%2018%20L2%2012%20L13%2012%20Z' fill='%23fff8d6'/></svg>");
+  background-repeat: repeat;
+  /* controla el tamaño de los brillitos: más pequeño => más densidad */
+  background-size: clamp(46px, 6vw, 80px);
+  opacity: 0.08;
+  filter: blur(0.4px) saturate(1.02);
+  transform: translateZ(0);
+  animation: cuteStarsDrift 40s linear infinite;
+  mix-blend-mode: screen; /* da un look más suave sobre gradiente */
+}
+@keyframes cuteStarsDrift {
+  from { background-position: 0 0; }
+  to   { background-position: 3000px -1200px; }
+}
+
+/* 2) Brillitos puntuales delante (opcional / decorativo) */
+.cute-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(255,255,255,0.95) 0px, rgba(255,255,255,0.0) 10px),
+    radial-gradient(circle at 80% 30%, rgba(255,255,255,0.9) 0px, rgba(255,255,255,0.0) 8px),
+    radial-gradient(circle at 40% 70%, rgba(255,255,255,0.88) 0px, rgba(255,255,255,0.0) 9px);
+  opacity: 0.12;
+  mix-blend-mode: screen;
+  animation: sparklesFloat 18s linear infinite;
+}
+@keyframes sparklesFloat { from { transform: translateY(0) } 50% { transform: translateY(-18px) } to { transform: translateY(0) } }
+
+/* ----------------------------
+   Mochi (comida) - tamaño + estilo
+   ---------------------------- */
+/* tu JS crea <div class="mochi-shot">🍡</div> — aquí lo estilamos */
+.mochi-shot{
+  position: absolute;
+  z-index: 6; /* por encima del pet-stage */
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* más grande y responsive */
+  font-size: clamp(44px, 8vw, 84px);
+  line-height: 1;
+  transform: translate(-12px, -8px);
+  text-shadow: 0 6px 18px rgba(0,0,0,0.12);
+  filter: drop-shadow(0 10px 30px rgba(0,0,0,0.12));
+  will-change: transform, opacity;
+  /* pequeña animación por si JS no anima inmediatamente */
+  transition: transform .28s cubic-bezier(.2,.9,.2,1), opacity .28s ease;
+  /* fondo sutil - parece un sticker */
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,250,245,0.7));
+  border-radius: 14px;
+  padding: 6px;
+  border: 1px solid rgba(255,255,255,0.6);
+}
+/* si el mochi tiene clase 'big' (opcional) lo hacemos aún más visible */
+.mochi-shot.big { font-size: clamp(56px, 9.6vw, 110px); padding: 8px; }
+
+/* animación fallback si el JS no usa Web Animations */
+@keyframes mochiPop {
+  0% { transform: translateY(0) scale(.95); opacity:0; }
+  60% { transform: translateY(-36px) scale(1.04); opacity:1; }
+  100% { transform: translateY(-120px) scale(.92); opacity:0; }
+}
+
+/* ----------------------------
+   Prendas / accesorios (más grandes y definidas)
+   ---------------------------- */
+/* Los elementos SVG usan clases .hat .scarf .backpack .glasses en tu JSX */
+.hat, .scarf, .backpack, .glasses {
+  /* escalamos para que se vean más notorias */
+  transform-origin: center;
+  transform-box: fill-box; /* importante para SVG */
+  transform: scale(1.14);
+  transition: transform .28s ease, filter .28s ease;
+  will-change: transform, filter;
+  stroke-linejoin: round;
+}
+
+/* hacer que el sombrero tenga un poco más de brillo y sombra */
+.hat { filter: drop-shadow(0 8px 22px rgba(255,140,190,0.08)); }
+
+/* gafas un poco más grandes y con borde suave */
+.glasses { stroke-width: 5; opacity: 0.98; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.12)); }
+
+/* mochila y bufanda con mayor tamaño percibido */
+.backpack { transform: scale(1.18); fill: #7cc4ff; }
+.scarf { transform: scale(1.12); fill: #ff8fb3; }
+
+/* reducir ligeramente en pantallas pequeñas para que no solapen */
+@media (max-width: 520px){
+  .hat, .scarf, .backpack, .glasses { transform: scale(1.02); }
+  .mochi-shot { font-size: clamp(40px, 12vw, 72px); }
+}
+
+/* interacción: cuando celebras, agrandar temporalmente accesorios (usa JS para togglear una clase .celebrate en #pet o body) */
+#pet.celebrate .hat,
+#pet.celebrate .backpack,
+#pet.celebrate .scarf {
+  transform: scale(1.32);
+  transition: transform 280ms cubic-bezier(.2,.9,.3,1);
+}
+
+/* ----------------------------
+   Ajustes visuales pequeños
+   ---------------------------- */
+/* si quieres variar colores de ropa según selección (opcional) */
+.hat.cap { fill: #8a6ad6; }
+.hat.crown { fill: #f7d34e; }
+.hat.beanie { fill: #ffa6c9; }
+
+/* ----------------------------
+   Mantener accesibilidad (reduce motion)
+   ---------------------------- */
+@media (prefers-reduced-motion: reduce){
+  body::before, .cute-sparkles, .floating, .mochi-shot, .member-card, .brandName::after { 
+    animation: none !important; transition: none !important; 
+  }
+}
+
+/* ----------------------------
+   Nota: si quieres que la comida sea aún más grande, añade la clase 'big' desde JS:
+   mochi.classList.add('big');
+   o ajusta font-size en .mochi-shot.big más arriba.
+   ---------------------------- */
