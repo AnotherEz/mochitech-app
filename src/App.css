@@ -8,7 +8,7 @@
 
 :root{ 
   --bg1:#b790f3; --bg2:#f7b0d9; --bg3:#ffffff;
-  --ink:#5b476e; --ink-2:#7e5ca8; --accent:#ff8fb3;
+  --ink:#625f66; --ink-2:#7e5ca8; --accent:#ff8fb3;
   --good:#5dd39e; --warn:#ffcc66; --bad:#ff897d;
 }
 *{box-sizing:border-box}
@@ -236,3 +236,141 @@ footer{padding:30px 20px 80px; text-align:center; opacity:.8}
 @media (prefers-reduced-motion: reduce){
   *{ animation:none !important; transition:none !important }
 }
+
+/* === Sobre nosotros / Equipo === */
+.about-team h2 { margin-top: 0; }
+.team-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:12px;
+  margin-top:12px;
+  align-items:start;
+}
+.member-card{
+  background:#fff;
+  border-radius:12px;
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  border:1px dashed #e9d7ff;
+  box-shadow:0 10px 18px #0000000f;
+}
+.member-card .avatar{
+  width:72px;
+  height:72px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  font-size:18px;
+  background:linear-gradient(135deg,var(--bg1),var(--bg2));
+  color:#fff;
+  margin-bottom:8px;
+  box-shadow:0 8px 18px #00000014;
+}
+.member-card h3{ margin:6px 0 2px; font-size:15px; color:var(--ink); }
+.member-card .role{ font-size:13px; color:var(--ink-2); opacity:.95; margin:0; }
+@media (max-width:520px){
+  .team-grid{ grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); }
+  .member-card .avatar{ width:60px; height:60px; font-size:16px; }
+}
+
+/* === Animación para "Sobre nosotros" (miembros) === */
+.team-grid{ /* ya existía; aquí aseguramos separación */
+  margin-top:12px;
+}
+
+/* card flotante + pequeña escala al hover */
+.member-card{
+  background:#fff;
+  border-radius:12px;
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  border:1px dashed #e9d7ff;
+  box-shadow:0 10px 18px #0000000f;
+  transform-origin:center;
+  /* animación flotante (bobbing) */
+  animation: bob var(--bob-duration, 3.8s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+  will-change: transform;
+  transition: transform .22s ease, box-shadow .22s ease;
+}
+.member-card:hover{
+  transform: translateY(-6px) scale(1.02);
+  box-shadow:0 18px 34px #00000022;
+}
+
+/* avatar con degradado dinámico */
+.member-card .avatar{
+  width:72px;
+  height:72px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  font-size:18px;
+  color:#fff;
+  margin-bottom:8px;
+  box-shadow:0 8px 18px #00000014;
+  background:linear-gradient(135deg,var(--bg1),var(--bg2),var(--bg3));
+  background-size:200% 200%;
+  animation: avatarShift 6s linear infinite;
+  animation-delay: var(--a-delay, 0s);
+  transition: transform .22s ease;
+}
+.member-card:hover .avatar{ transform: scale(1.06); }
+
+/* rol con sutil pulso de color */
+.member-card .role{
+  font-size:13px;
+  color:var(--ink-2);
+  opacity:.95;
+  margin:0;
+  transition: color .35s ease, opacity .35s ease;
+}
+.member-card:hover .role{ color:var(--accent); opacity:1; }
+
+/* KEYFRAMES */
+@keyframes bob{
+  0%{ transform: translateY(0) }
+  50%{ transform: translateY(-8px) }
+  100%{ transform: translateY(0) }
+}
+@keyframes avatarShift{
+  0%{ background-position:0% 50% }
+  50%{ background-position:100% 50% }
+  100%{ background-position:0% 50% }
+}
+
+/* Ajustes responsivos */
+@media (max-width:520px){
+  .member-card .avatar{ width:60px; height:60px; font-size:16px; }
+  .member-card{ padding:10px; }
+}
+
+/* Respeta preferencia de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  .member-card, .member-card .avatar { animation: none !important; transition: none !important; }
+}
+
+/* === Footer mejorado === */
+.site-footer{
+  padding:18px 12px 40px;
+  text-align:center;
+  color:var(--ink);
+  opacity:0.9;
+  border-top:1px dashed #ffffff22;
+  margin-top:18px;
+}
+.site-footer p{
+  margin:0; font-size:14px;
+}
+.site-footer .muted{ display:block; font-size:12px; opacity:.7; margin-top:6px; }
+

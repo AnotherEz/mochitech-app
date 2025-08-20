@@ -2,6 +2,15 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 
 export default function Mochitech() {
+  const team = useMemo(() => [
+  { name: "Mendoza Gómez Mercedes", role: "Integrante" },
+  { name: "López López Claudia", role: "Integrante" },
+  { name: "Quispe Palacios Fernando", role: "Integrante" },
+  { name: "Inga Sullon Yajaira", role: "Integrante" },
+  { name: "Murguia Merino Dayron", role: "Integrante" },
+  { name: "Quinde Navarro Carlos", role: "Integrante" },
+  { name: "Sandoval Peralta Daniel", role: "Integrante" },
+], []);
   // DOM refs
   const floatingContainerRef = useRef(null);
   const speechRef = useRef(null);
@@ -604,6 +613,46 @@ export default function Mochitech() {
           </div>
         </section>
 
+        <section className="card about-team reveal">
+  <h2>Sobre nosotros — IEP EL TRIUNFO</h2>
+  <p>
+    Proyecto realizado por estudiantes del colegio <strong>IEP EL TRIUNFO</strong>. 
+    Equipo responsable del proyecto:
+  </p>
+
+  <div className="team-grid" role="list">
+  {team.map((m, i) => {
+    const initials = m.name
+      .split(" ")
+      .map(n => n[0] || "")
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+    return (
+      <article
+        key={i}
+        className="member-card"
+        role="listitem"
+        aria-label={`Integrante ${m.name}`}
+        style={{ ["--delay"]: `${i * 0.12}s` }} // stagger: 0.12s entre tarjetas
+      >
+        <div className="avatar" aria-hidden="true" style={{ ["--a-delay"]: `${i * 0.08}s` }}>
+          {initials}
+        </div>
+        <h3>{m.name}</h3>
+        <p className="role">{m.role}</p>
+      </article>
+    );
+  })}
+</div>
+
+
+  <p className="tiny" style={{ marginTop: 12 }}>
+    Agradecimientos a los docentes y a la comunidad del colegio por su apoyo.
+  </p>
+</section>
+
+
         <section className="card reveal">
           <h2>Plan de Consumo</h2>
           <p>
@@ -695,9 +744,12 @@ export default function Mochitech() {
           </div>
         </section>
 
-        <footer>
-          <p className="tiny">© 2025 Mochitech.</p>
-        </footer>
+        <footer className="site-footer">
+                <div className="wrap">
+               <p>© 2025 Mochitech - IEP EL TRIUNFO <span className="muted">Proyecto desarrollado en React.</span></p>
+        </div>
+      </footer>
+
       </main>
     </div>
   );
